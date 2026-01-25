@@ -1,7 +1,7 @@
-import { and, getTableColumns, ilike, or, sql } from 'drizzle-orm';
+import { and, desc, eq, getTableColumns, ilike, or, sql } from 'drizzle-orm';
 import express from 'express';
 import { departments, subjects } from '../db/schema';
-import { db } from '../db';
+import { db } from '../db/index';
 
 const router = express.Router();
 
@@ -31,21 +31,22 @@ router.get('/', async (req, res) => {
         const whereClause = filterConditions.length > 0 ? and(...filterConditions) : undefined;
 
         const countResult = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(subjects)
-        .leftJoin(departments, eq(subjects.departmentId, departments.id))
-        .where(whereClause)
+            .select({ count: sql<number>`count(*)` })
+            .from(subjects)
+            .leftJoin(departments, eq(subjects.departmentId, departments.id))
+            .where(whereClause);
 
         const totalCount = countResult[0]?.count ?? 0;
 
-        const subjectsList = await db.select({
+        const subjectsList = await db
+        .select({
             ...getTableColumns(subjects),
-            department: { ...getTableColumns(departments)}
+            department: { ...getTableColumns(departments) }
         }).from(subjects).leftJoin(departments, eq(subjects.departmentId, departments.id))
-        .where(whereClause)
-        .orderBy(desc(subjects.createdAt))
-        .limit(limitPerPage)
-        .offset(offSet);
+            .where(whereClause)
+            .orderBy(desc(subjects.createdAt))
+            .limit(limitPerPage)
+            .offset(offSet);
 
         res.status(200).json({
             data: subjectsList,
@@ -55,9 +56,11 @@ router.get('/', async (req, res) => {
                 total: totalCount,
                 totalPages: Math.ceil(totalCount / limitPerPage),
             }
-            }
+        });
     } catch (e) {
         console.error(`GET /subjects error: ${e}`);
         res.status(500).json({ error: 'Failed to get subjects' });
     }
 })
+
+export default router;
