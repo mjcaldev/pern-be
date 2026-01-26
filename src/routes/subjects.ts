@@ -8,10 +8,10 @@ const router = express.Router();
 // Get all subjecst with optional search, filter, and pagination
 router.get('/', async (req, res) => {
     try {
-        const { search, filter, department, page = 1, limit = 10 } = req.query;
+        const { search, department, page = 1, limit = 10 } = req.query;
 
-        const currentPage = Math.max(1, +page);
-        const limitPerPage = Math.max(1, +limit);
+        const currentPage = Math.max(1, Number.parseInt(String(page), 10) || 1);
+        const limitPerPage = Math.min(Math.max(1, Number.parseInt(String(limit), 10) || 10), 100);
 
         const offSet = (currentPage - 1) * limitPerPage;
         const filterConditions = [];
@@ -25,7 +25,9 @@ router.get('/', async (req, res) => {
             );
         }
         if (department) {
-            filterConditions.push(ilike(departments.name, `%${department}%`));
+            // Escape special characters in department name to avoid injection
+            const deptPattern = `%${String(department).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}%`;
+            filterConditions.push(ilike(departments.name, deptPattern));
         }
 
         const whereClause = filterConditions.length > 0 ? and(...filterConditions) : undefined;
