@@ -3,6 +3,7 @@ import subjectsRouter from './routes/subjects';
 import usersRouter from './routes/users';
 import classesRouter from './routes/classes';
 import cors from 'cors';
+import securityMiddleware from './middleware/security';
 
 const app = express();
 const PORT = 8000;
