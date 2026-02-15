@@ -52,7 +52,7 @@ const securityMiddleware = (req: Request, res: Response, next: NextFunction) => 
             return res.status(403).json({ error: 'Forbidden', message: 'Request blocked by security shield.'})
         }
         if(decision.isDenied() && decision.reason.isRateLimit()) {
-            return res.status(403).json({ error: 'Too many requests', message });
+            return res.status(429).json({ error: 'Too many requests', message });
         }
 
         return next(); 
