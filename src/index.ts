@@ -16,6 +16,8 @@ app.use(cors({
 }))
 
 app.use(express.json());
+ 
+app.use(securityMiddleware);
 
 app.use('/api/subjects', subjectsRouter);
 app.use('/api/users', usersRouter);
