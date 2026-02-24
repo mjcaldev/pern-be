@@ -4,6 +4,10 @@ import usersRouter from './routes/users';
 import classesRouter from './routes/classes';
 import cors from 'cors';
 import securityMiddleware from './middleware/security';
+import { toNodeHandler } from 'better-auth/node';
+import { auth } from './lib/auth';
+
+console.log("BETTER_AUTH_BASE_URL =", process.env.BETTER_AUTH_BASE_URL);
 
 const app = express();
 const PORT = 8000;
@@ -16,6 +20,10 @@ app.use(cors({
 }))
 
 app.use(express.json());
+app.use('/api/auth', (req, res) => {
+  console.log(`[auth] ${req.method} ${req.originalUrl}`);
+  return toNodeHandler(auth)(req, res);
+});
  
 app.use(securityMiddleware);
 

@@ -39,22 +39,22 @@ export const classes = pgTable('classes', {
     status: classStatusEnum('status').notNull().default('active'),
     schedules: jsonb('schedules').$type<unknown[]>().notNull().default([]),
     ...timestamps,
-}, (table) => ({
-    inviteCodeKey: uniqueIndex('classes_invite_code_key').on(table.inviteCode),
-    subjectIdIdx: index('classes_subject_id_idx').on(table.subjectId),
-    teacherIdIdx: index('classes_teacher_id_idx').on(table.teacherId),
-}));
+}, (table) => [
+    uniqueIndex('classes_invite_code_key').on(table.inviteCode),
+    index('classes_subject_id_idx').on(table.subjectId),
+    index('classes_teacher_id_idx').on(table.teacherId),
+]);
 
 export const enrollments = pgTable('enrollments', {
     id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
     studentId: text('student_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
     classId: integer('class_id').notNull().references(() => classes.id, { onDelete: 'cascade' }),
     ...timestamps,
-}, (table) => ({
-    studentClassKey: uniqueIndex('enrollments_student_id_class_id_key').on(table.studentId, table.classId),
-    studentIdIdx: index('enrollments_student_id_idx').on(table.studentId),
-    classIdIdx: index('enrollments_class_id_idx').on(table.classId),
-}));
+}, (table) => [
+    uniqueIndex('enrollments_student_id_class_id_key').on(table.studentId, table.classId),
+    index('enrollments_student_id_idx').on(table.studentId),
+    index('enrollments_class_id_idx').on(table.classId),
+]);
 
 export const departmentsRelations = relations(departments, ({ many }) => ({ subjects: many(subjects) }));
 
