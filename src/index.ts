@@ -15,16 +15,38 @@ console.log("BETTER_AUTH_BASE_URL =", process.env.BETTER_AUTH_BASE_URL);
 const app = express();
 const PORT = 8000;
 
+function normalizeOrigin(input: string): string | null {
+  const raw = input.trim().replace(/\/+$/g, '');
+  if (!raw) return null;
+
+  const withScheme =
+    raw.includes('://') ? raw : /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(raw) ? `http://${raw}` : `https://${raw}`;
+
+  try {
+    const u = new URL(withScheme);
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return null;
+  }
+}
+
 const allowedOrigins = (process.env.FRONTEND_URL ?? 'http://localhost:5173')
   .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
+  .map(normalizeOrigin)
+  .filter((v): v is string => Boolean(v));
+
+const allowedOriginsSet = new Set(allowedOrigins);
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     // Allow non-browser clients (no Origin header) and same-origin requests.
     if (!origin) return callback(null, true);
-    return callback(null, allowedOrigins.includes(origin));
+    const normalized = normalizeOrigin(origin) ?? origin;
+    const ok = allowedOriginsSet.has(normalized);
+    if (!ok) {
+      console.warn(`[cors] blocked origin: ${origin} (normalized: ${normalized})`);
+    }
+    return callback(null, ok);
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
