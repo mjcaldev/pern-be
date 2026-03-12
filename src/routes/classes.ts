@@ -5,9 +5,7 @@ import { classes, departments, enrollments, subjects, user } from '../db/schema/
 
 const router = express.Router();
 
-const toLikePattern = (value: unknown) => `%${String(value).replace(/[%_\\]/g, '\\$&')}%`;
-
-// Get all classes with optional search, subject, teacher filters, and pagination
+// Get all classes with optional search, filter, and pagination
 router.get('/', async (req, res) => {
     try {
         const { search, subject, teacher, page = 1, limit = 10 } = req.query;
@@ -19,16 +17,24 @@ router.get('/', async (req, res) => {
         const filterConditions = [];
 
         if (search) {
-            const pattern = toLikePattern(search);
-            filterConditions.push(or(ilike(classes.name, pattern), ilike(classes.inviteCode, pattern)));
+            filterConditions.push(
+                or(
+                    ilike(classes.name, `%${search}%`),
+                    ilike(classes.inviteCode, `%${search}%`),
+                )
+            );
         }
 
         if (subject) {
-            filterConditions.push(ilike(subjects.name, toLikePattern(subject)));
+            // Escape special characters in subject name to avoid injection
+            const subjectPattern = `%${String(subject).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}%`;
+            filterConditions.push(ilike(subjects.name, subjectPattern));
         }
 
         if (teacher) {
-            filterConditions.push(ilike(user.name, toLikePattern(teacher)));
+            // Escape special characters in teacher name to avoid injection
+            const teacherPattern = `%${String(teacher).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}%`;
+            filterConditions.push(ilike(user.name, teacherPattern));
         }
 
         const whereClause = filterConditions.length > 0 ? and(...filterConditions) : undefined;
@@ -67,7 +73,7 @@ router.get('/', async (req, res) => {
         });
     } catch (e) {
         console.error(`GET /classes error: ${e}`);
-        res.status(500).json({ error: 'Failed to fetch classes' });
+        res.status(500).json({ error: 'Failed to get classes' });
     }
 });
 
